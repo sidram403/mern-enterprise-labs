@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 /**
  * User Schema
@@ -50,6 +51,49 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+/**
+ * Pre-save hook
+ * This runs automatically before a document is saved to MongoDB.
+ * We use it to hash the password safely.
+ */
+
+userSchema.pre("save", async function (next) {
+  /**
+   * `this` refers to the current document
+   * If password is NOT modified, skip hashing
+   * This prevents re-hashing during updates
+   */
+  if (!this.isModified("password")) {
+    return next();
+  }
+
+  try {
+    /**
+     * Generate salt
+     * Higher rounds = more secure but slower
+     * 10 is a good production balance
+     */
+    const salt = await bcrypt.genSalt(10);
+
+    /**
+     * Hash the password using the generated salt
+     */
+    this.password = await bcrypt.hash(this.password, salt);
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Instance method to compare entered password with stored hash
+ * Used dduring login
+ */
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 /**
  * Exporting the User model
