@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 
 /**
  * Register a new user
@@ -58,6 +59,51 @@ export const registerUser = async (req, res) => {
     }
 
     console.error("Registration error", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    //Basic validation
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        message: "User not exists",
+      });
+    }
+
+    // Compare passowrd
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Invalid credentails",
+      });
+    }
+
+    // Generate tokens
+    const payload = { userId: user._id, role: user.role };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    res.status(200).json({
+      accessToken,
+      refreshToken,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({
       message: "Internal server error",
     });
