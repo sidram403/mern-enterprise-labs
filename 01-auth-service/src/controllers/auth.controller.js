@@ -1,6 +1,6 @@
 import User from "../models/user.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
-
+import jwt from "jsonwebtoken";
 /**
  * Register a new user
  * This controller handles:
@@ -98,6 +98,10 @@ export const loginUser = async (req, res) => {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
+    // Store refresh token in database
+    user.refreshTokens.push(refreshToken);
+    await user.save();
+
     res.status(200).json({
       accessToken,
       refreshToken,
@@ -106,6 +110,75 @@ export const loginUser = async (req, res) => {
     console.error("Login error:", error);
     res.status(500).json({
       message: "Internal server error",
+    });
+  }
+};
+
+/**
+ * Refresh access token using refresh token
+ */
+
+export const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: "Refresh token required",
+      });
+    }
+
+    //verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Find user
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(403).json({
+        message: "Invalid refresh token",
+      });
+    }
+
+    // Check if refresh token exists in DB
+    if (!user.refreshTokens.includes(refreshToken)) {
+      return res.status(403).json({
+        message: "Refresh token not recognised",
+      });
+    }
+
+    /**
+     * ROTATION:
+     * Remove old refresh token
+     */
+    user.refreshTokens = user.refreshTokens.filter(
+      (token) => token !== refreshToken,
+    );
+
+    /**
+     * Generate new access token
+     * Using same payload
+     */
+    const newAccessToken = generateAccessToken({
+      userId: user._id,
+      role: user.role,
+    });
+
+    const newRefreshToken = generateRefreshToken({
+      userId: user._id,
+      role: user.role,
+    });
+
+    // Store new refresh token
+    user.refreshTokens.push(newRefreshToken);
+    await user.save();
+
+    res.status(200).json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (error) {
+    return res.status(403).json({
+      message: "Invalid or expired refresh token",
     });
   }
 };

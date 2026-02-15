@@ -40,6 +40,16 @@ const userSchema = new mongoose.Schema(
       enum: ["USER", "ADMIN"],
       default: "USER",
     },
+
+    /**
+     * Stores active refresh tokens
+     * Allows logout and token rotation
+     */
+    refreshTokens: [
+      {
+        type: String,
+      },
+    ],
   },
   {
     /**
@@ -49,7 +59,7 @@ const userSchema = new mongoose.Schema(
      * Useful for auditing and debugging
      */
     timestamps: true,
-  }
+  },
 );
 
 /**
