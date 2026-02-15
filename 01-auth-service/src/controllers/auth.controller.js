@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 import jwt from "jsonwebtoken";
+import { registerSchema } from "../validation/auth.validation.js";
+import { ZodError } from "zod";
 /**
  * Register a new user
  * This controller handles:
@@ -10,18 +12,13 @@ import jwt from "jsonwebtoken";
  */
 export const registerUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
     /**
-     * Basic validation
-     * (We’ll replace this later with Zod/Joi)
+     * Validate request body using Zod
+     * If invalid -> Zod throws error automatically
      */
+    const validatedData = registerSchema.parse(req.body);
 
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required",
-      });
-    }
+    const { email, password } = validatedData;
 
     /**
      * Optional pre-check for better UX
@@ -49,6 +46,22 @@ export const registerUser = async (req, res) => {
       role: user.role,
     });
   } catch (error) {
+    /**
+     * Handle Zod validation errors
+     */
+    if (error.name === "ZodError") {
+      try {
+        const parsed = JSON.parse(error.message);
+        return res.status(400).json({
+          message: parsed[0].message,
+        });
+      } catch {
+        return res.status(400).json({
+          message: "Invalid request data",
+        });
+      }
+    }
+
     /**
      * Handle MongoDB duplicate key error (race condition safe)
      */
