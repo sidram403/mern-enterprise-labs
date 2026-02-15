@@ -182,3 +182,39 @@ export const refreshToken = async (req, res) => {
     });
   }
 };
+
+export const logoutUser = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        message: "Refresh token required",
+      });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(403).json({
+        message: "Invalid token",
+      });
+    }
+
+    // Remove refresh token
+    user.refreshTokens = user.refreshTokens.filter(
+      (token) => token !== refreshToken,
+    );
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    return res.status(403).json({
+      message: "Invalid token",
+    });
+  }
+};
