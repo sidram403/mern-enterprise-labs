@@ -3,11 +3,25 @@ import authRoutes from "./routes/auth.routes.js";
 import protectedRoutes from "./routes/protected.routes.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 import { rateLimit } from "express-rate-limit";
+import morgan from "morgan";
+import logger from "./utils/logger.js";
 
 const app = express();
 
 // JSON parser
 app.use(express.json());
+
+/**
+ * HTTP request logger using Morgan
+ * Stream logs into Winston
+ */
+app.use(
+  morgan("combined", {
+    stream: {
+      write: (message) => logger.info(message.trim()),
+    },
+  }),
+);
 
 // Rate limiter (GLOBAL protection)
 const limiter = rateLimit({

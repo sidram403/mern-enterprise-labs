@@ -5,7 +5,7 @@
 **/.env
 
 # logs
-**/*.log
+**/*.logs
 
 # OS files
 .DS_Store

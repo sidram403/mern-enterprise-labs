@@ -1,10 +1,15 @@
+import logger from "../utils/logger.js";
+
 /**
  * Global error handling middleware
  * Must be the LAST middleware registred in app.js
  */
-
 export const errorHandler = (err, req, res, next) => {
-  console.error("Global Error", err);
+  logger.error("Unhandled error", {
+    message: err.message,
+    stack: err.stack,
+    route: req.originalUrl,
+  });
 
   const statusCode = err.statusCode || 500;
 

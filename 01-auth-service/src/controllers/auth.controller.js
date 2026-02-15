@@ -3,6 +3,7 @@ import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 import jwt from "jsonwebtoken";
 import { registerSchema } from "../validation/auth.validation.js";
 import { ZodError } from "zod";
+import logger from "../utils/logger.js";
 /**
  * Register a new user
  * This controller handles:
@@ -71,7 +72,10 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    console.error("Registration error", error);
+    logger.error("Registration error", {
+      message: error.message,
+      stack: error.stack,
+    });
     res.status(500).json({
       message: "Internal server error",
     });
