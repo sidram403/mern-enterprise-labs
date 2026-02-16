@@ -74,6 +74,22 @@ export const getAnalytics = async (req, res) => {
           totalSales: { $sum: "$amount" },
         },
       },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+      { $unwind: "$productDetails" },
+      {
+        $project: {
+          _id: 0,
+          productName: "$productDetails.name",
+          totalSales: 1,
+        },
+      },
       { $sort: { totalSales: -1 } },
       { $limit: 5 },
     ]);
