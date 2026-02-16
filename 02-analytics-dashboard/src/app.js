@@ -1,11 +1,13 @@
 import express from "express";
 import userRoutes from "./routes/user.routes.js";
+import productRoutes from "./routes/product.routes.js";
 
 const app = express();
 
 app.use(express.json());
 
 app.use("/api/users", userRoutes);
+app.use("/api/products", productRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "UP" });
