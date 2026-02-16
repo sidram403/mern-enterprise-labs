@@ -185,7 +185,7 @@ Session invalidated
 ---
 
 # 📂 Project Structure
-
+```bash
 01-auth-service/
 │
 ├── src/
@@ -200,8 +200,7 @@ Session invalidated
 ├── logs/
 ├── server.js
 └── README.md
-
----
+```
 
 # 🧪 API Endpoints
 
