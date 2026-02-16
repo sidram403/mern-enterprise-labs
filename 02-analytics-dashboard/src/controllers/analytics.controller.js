@@ -7,15 +7,30 @@ import Order from "../models/order.model.js";
 
 export const getAnalytics = async (req, res) => {
   try {
+    const { from, to } = req.query;
+
     /**
-     * Total Users
+     * Optional date filter
+     * Allows analytics for specific time range
+     */
+    const dateFilter = {};
+
+    if (from && to) {
+      dateFilter.createdAt = {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      };
+    }
+
+    /**
+     * Total Users (no Date filter)
      */
     const totalUsers = await User.countDocuments();
 
     /**
-     * Total Orders
+     * Total Orders (with optional filter)
      */
-    const totalOrders = await Order.countDocuments();
+    const totalOrders = await Order.countDocuments(dateFilter);
 
     /**
      * Total Revenue
@@ -38,6 +53,7 @@ export const getAnalytics = async (req, res) => {
      */
 
     const monthlyRevenue = await Order.aggregate([
+      { $match: dateFilter },
       {
         $group: {
           _id: { $month: "$createdAt" },
@@ -51,6 +67,7 @@ export const getAnalytics = async (req, res) => {
      * Top 5 Products by Revenue
      */
     const topProducts = await Order.aggregate([
+      { $match: dateFilter },
       {
         $group: {
           _id: "$product",
